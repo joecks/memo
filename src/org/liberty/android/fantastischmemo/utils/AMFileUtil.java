@@ -60,14 +60,21 @@ public class AMFileUtil {
 
 
         // Also delete all the preference related to the db file.
-        amPrefUtil.removePrefKeys(filepath);
+        // amPrefUtil.removePrefKeys(filepath);
 
         new File(filepath).delete();
     }
 
-    public void deleteFileWithBackup(String filepath) throws IOException {
+    /**
+     * Backups a database and moves it to <dbname>.backup.
+     *
+     * @param filepath of the database which should be deleted
+     * @return the filepath of the backup file
+     * @throws IOException
+     */
+    public String deleteFileWithBackup(String filepath) throws IOException {
         if (!new File(filepath).exists()) {
-            return;
+            return null;
         }
 
         String ext = FilenameUtils.getExtension(filepath);
@@ -75,6 +82,7 @@ public class AMFileUtil {
         String backFileName = nameWtihoutExt + ".backup." + ext;
         FileUtils.copyFile(new File(filepath), new File(backFileName));
         deleteDbSafe(filepath);
+        return backFileName;
     }
 
     // Copy a file from asset to the dest file.

@@ -19,11 +19,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 package org.liberty.android.fantastischmemo.downloader.google;
 
+import java.io.File;
 import java.util.List;
 
 import javax.inject.Inject;
 
 import org.liberty.android.fantastischmemo.AMEnv;
+import org.liberty.android.fantastischmemo.AnyMemoDBOpenHelper;
+import org.liberty.android.fantastischmemo.AnyMemoDBOpenHelperManager;
 import org.liberty.android.fantastischmemo.utils.AMFileUtil;
 
 import android.content.Context;
@@ -82,8 +85,8 @@ public class GoogleDriveDownloadHelper {
             title += ".db";
         }
         String saveDBPath= AMEnv.DEFAULT_ROOT_PATH + "/" + title;
-        amFileUtil.deleteFileWithBackup(saveDBPath);
-        converter.convertCellsToDb(cardCells, learningDataCells, saveDBPath);
+        String backupPath = amFileUtil.deleteFileWithBackup(saveDBPath);
+        converter.convertCellsToDb(cardCells, learningDataCells, saveDBPath, backupPath);
         return saveDBPath;
     }
 

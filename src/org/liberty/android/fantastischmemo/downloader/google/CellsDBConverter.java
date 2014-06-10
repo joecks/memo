@@ -20,25 +20,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 package org.liberty.android.fantastischmemo.downloader.google;
 
 import java.io.IOException;
-
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import org.liberty.android.fantastischmemo.AnyMemoDBOpenHelper;
 import org.liberty.android.fantastischmemo.AnyMemoDBOpenHelperManager;
-
 import org.liberty.android.fantastischmemo.dao.CardDao;
-
+import org.liberty.android.fantastischmemo.dao.LearningDataDao;
 import org.liberty.android.fantastischmemo.domain.Card;
 import org.liberty.android.fantastischmemo.domain.Category;
 import org.liberty.android.fantastischmemo.domain.LearningData;
 
 import android.content.Context;
-
 import android.util.Log;
 
 public class CellsDBConverter {
@@ -59,7 +56,16 @@ public class CellsDBConverter {
      * If learningDataCells, new learning data is used.
      * dbPath is the place to store converted database
      */
-    public void convertCellsToDb(Cells cardCells, Cells learningDataCells, String dbPath) throws IOException {
+    public void convertCellsToDb(Cells cardCells, Cells learningDataCells, String dbPath, String backupPath) throws IOException {
+
+		CardDao backupCardDao = null;
+		LearningDataDao BackupLearningDataDao = null;
+		if (learningDataCells == null && backupPath != null) {
+			AnyMemoDBOpenHelper sourceHelper = AnyMemoDBOpenHelperManager
+					.getHelper(mContext, backupPath);
+			backupCardDao = sourceHelper.getCardDao();
+			BackupLearningDataDao = sourceHelper.getLearningDataDao();
+		}
 
         int numberOfRows = cardCells.getRowCounts();
         int numberOfLearningDataRows = 0;
@@ -96,10 +102,27 @@ public class CellsDBConverter {
 
             // This can't be null because numberOfLearningDataRows is 0
             // if learningDataCells is 0.
-            LearningData learningData;
+            LearningData learningData = null;
             if (i < numberOfLearningDataRows) {
                 learningData = getLearningDataFromRow(learningDataCells.getRow(i));
 
+			} else if (backupCardDao != null) {
+				try {
+					List<Card> query = backupCardDao.queryForEq("question",
+							card.getQuestion());
+					if (query != null && query.size() > 0) {
+						Card oldCard = query.get(0);
+						BackupLearningDataDao.refresh(oldCard.getLearningData());
+						learningData = new LearningData();
+						learningData.cloneFromLearningData(oldCard
+								.getLearningData());
+						learningData.setId(null);
+					}
+				} catch (SQLException e) {
+				}
+				if (learningData == null) {
+					learningData = new LearningData();
+				}
             } else {
                 learningData = new LearningData();
             }
